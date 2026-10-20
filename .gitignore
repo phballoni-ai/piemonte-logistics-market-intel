@@ -1,0 +1,12 @@
+# Dados reais NUNCA vao para o Git
+*.db
+*.sqlite
+*.sqlite3
+data/local/
+data/raw/*
+!data/raw/.gitkeep
+!data/sample/
+.env
+__pycache__/
+.pytest_cache/
+.venv/
