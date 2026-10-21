@@ -1,78 +1,69 @@
 # Piemonte Logistics & Industrial B2B Market Intelligence
 
-Sistema de inteligencia de mercado e prospeccao analitica voltado ao setor de **logistica e atacado de maquinario/pecas industriais** na regiao do Piemonte (foco na provincia de Torino e eixo Pinerolo-Orbassano-Rivalta).
+Protótipo de inteligência de mercado e prospecção analítica para **logística e atacado de peças industriais** na região do Piemonte (província de Torino, eixo Pinerolo-Orbassano-Rivalta).
 
-O projeto implementa uma abordagem **evidence-first**:
-1. **Fatos, fontes e datas estritamente separados de hipoteses.**
-2. **Nenhum numero financeiro sem fonte (`source_id`) e ano fiscal de referencia.**
-3. **Data Quality Flags:** Lacunas de dados e divergencias sao registradas como alertas de qualidade, sem inventar zeros ou suposicoes.
-4. **Hipoteses Estrategicas Explicitas:** Dores operacionais e oportunidades de negocio sao rotuladas como hipoteses de trabalho, acompanhadas de perguntas nao-invasivas de validacao para conversas de campo (*discovery*).
+Abordagem **evidence-first**:
+1. Fatos, fontes e datas ficam separados de hipóteses.
+2. Nenhum número financeiro entra sem fonte e ano fiscal.
+3. Lacunas viram *data quality flags*; nunca se inventa zero.
+4. Dores e oportunidades são **hipóteses a validar**, com perguntas de descoberta para a conversa de campo.
 
----
+> **Os 40 registros de `data/sample/pilot_synthetic_40.csv` são integralmente fictícios.** Nenhuma interação de demonstração representa conversa real. Não há scraping, integração Telemaco ou acesso automatizado a registros oficiais.
 
-## Estrutura do Projeto
+## Estrutura
 
 ```text
-├── src/
-│   └── mintel/
-│       ├── __init__.py
-│       ├── db.py           # Schema SQLite v2 & gerenciamento de conexoes
-│       ├── validators.py   # Validacao de P.IVA (checksum italiano) e normalizacao ATECO
-│       ├── ingest.py       # Ingestao atomica (SAVEPOINT) de lotes CSV com log de rejeicao
-│       ├── dossier.py      # Gerador de Fichas de Inteligencia (Dossiers) & Hipoteses
-│       └── cli.py          # Interface de linha de comando (CLI)
-├── data/
-│   └── sample/
-│       └── pilot_synthetic_40.csv  # Dataset sintetico com 40 empresas + 1 caso de rejeicao
-├── reports/
-│   └── dossiers/           # Fichas individuais geradas em Markdown
-└── tests/
-    ├── test_db.py          # Testes unitarios do schema e integridade relacional
-    ├── test_ingest.py      # Testes de ingestao atomica e relatorio de rejeicoes
-    └── test_dossier.py     # Testes de extracao e formatacao de dossiers executivos
+src/mintel/
+  db.py            schema SQLite e conexão
+  validators.py    checksum de P.IVA e normalização ATECO
+  ingest.py        ingestão em lote de CSV (cada linha em SAVEPOINT; rejeições listadas)
+  interactions.py  contatos de campo (desfecho, dor, objeção, próximo passo) e observações com fonte
+  dossier.py       dossiê por empresa (Markdown e HTML A4 imprimível)
+  report.py        score de priorização e painel HTML
+  server.py        servidor local (painel, upload de CSV, formulários de campo)
+  cli.py           comandos
+data/sample/       CSV sintético (40 empresas + 1 linha inválida de propósito)
+tests/             testes automatizados
 ```
 
----
+## Como rodar
 
-## Como Usar
-
-### 1. Instalacao e Testes
 ```bash
 git clone https://github.com/phballoni-ai/piemonte-logistics-market-intel.git
 cd piemonte-logistics-market-intel
-pip install -r requirements.txt
-
-# Executar suite completa de testes
 python -m pytest -q
-```
 
-### 2. Inicializar o Banco SQLite
-```bash
 PYTHONPATH=src python -m mintel.cli init
-```
-
-### 3. Ingerir Dados em Lote (CSV)
-```bash
 PYTHONPATH=src python -m mintel.cli ingest data/sample/pilot_synthetic_40.csv
+PYTHONPATH=src python -m mintel.cli serve --port 8000     # abra http://localhost:8000
 ```
 
-### 4. Consultar Ficha de Inteligencia no Terminal
+Outros comandos:
+
 ```bash
-PYTHONPATH=src python -m mintel.cli dossier --id 1
+PYTHONPATH=src python -m mintel.cli report                 # painel estático em reports/dashboard.html (somente leitura)
+PYTHONPATH=src python -m mintel.cli dossier --id 1         # dossiê no terminal
+PYTHONPATH=src python -m mintel.cli export-dossiers        # um .md por empresa
 ```
 
-### 5. Exportar Todos os Dossiers em Markdown
-```bash
-PYTHONPATH=src python -m mintel.cli export-dossiers --out reports/dossiers
-```
+## O painel local (`serve`)
 
----
+- Ranking, filtros, gráfico e dossiê lateral por empresa.
+- Importação de CSV pelo navegador.
+- Formulários para registrar contato e observação (com fonte).
+- Link "Salvar dossiê em PDF" (`/dossier/<id>/print`): abra e use *Imprimir > Salvar como PDF*.
 
-## Playbooks e Hipoteses por Segmento
+## Score de priorização
 
-- **Logistica e Transporte Rodoviario (ATECO 49.41 / 52.10):**
-  - *Hipotese 1 (Margem & Combustivel):* Pressao de custos em diesel e folha; oportunidade em roteirizacao dinamica, telemetria e reducao de rotas vazias (*backhaul*).
-  - *Hipotese 2 (SLA & Visibilidade B2B):* Clientes industriais demandam visibilidade Just-in-Time; atrito em comprovacao digital de entrega (e-POD).
-- **Atacado de Pecas e Maquinas Industriais (ATECO 46.62 / 46.69):**
-  - *Hipotese 1 (Capital de Giro em Pecas):* Equilibrio entre estoque imobilizado em itens de baixo giro e risco de ruptura em componentes criticos (Curva A).
-  - *Hipotese 2 (Digitalizacao B2B):* Tempo excessivo gasto por vendedores internos em cotacoes manuais repetitivas versus prospeccao ativa de contas industriais.
+Heurística de 0 a 100, **não é previsão de venda**: porte (40), equipe (20), intensidade de mão de obra (20) e completude dos dados (20). Tier A >= 80, B >= 55. As faixas são palpites iniciais e devem ser calibradas com resultados reais de conversas (`src/mintel/report.py`).
+
+## Limites
+
+- O servidor escuta apenas `127.0.0.1`, não tem autenticação e não deve ser exposto na internet.
+- A importação é aditiva: P.IVA já importada é rejeitada, não sobrescrita.
+- Checksum de P.IVA valida a forma, não a existência da empresa.
+- Receita no CSV é tratada como informada pela fonte; a definição contábil exata deve ser confirmada na fonte real.
+
+## Usar dados reais
+
+O CSV de entrada precisa das colunas do arquivo de exemplo. Faça a ingestão em um banco novo (`--db caminho.db`) para não misturar com os dados fictícios, e troque a fonte (`source_name`, `source_type`, `source_url`) para a origem real.
