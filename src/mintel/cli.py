@@ -5,12 +5,13 @@ Comandos faceis para:
 - Ingerir dados: python -m mintel.cli ingest <caminho_csv>
 - Gerar dossier de uma empresa: python -m mintel.cli dossier --id 1
 - Exportar todos os dossiers em Markdown: python -m mintel.cli export-dossiers
+- Gerar dashboard visual HTML: python -m mintel.cli report
 """
 import argparse
 import sys
 from pathlib import Path
 from mintel.db import init_db
-from mintel.ingest import ingest_companies_csv
+from mintel.report import build_report
 from mintel.dossier import build_company_dossier, format_dossier_markdown, export_all_dossiers_markdown
 
 
@@ -37,6 +38,11 @@ def main():
     p_export.add_argument("--db", default=None, help="Caminho do arquivo SQLite")
     p_export.add_argument("--out", default="reports/dossiers", help="Diretorio de saida")
 
+    # report
+    p_rep = subparsers.add_parser("report", help="Gera o painel visual HTML")
+    p_rep.add_argument("--db", default=None, help="Caminho do arquivo SQLite")
+    p_rep.add_argument("--out", default="reports/dashboard.html", help="Arquivo HTML de saida")
+
     args = parser.parse_args()
 
     if args.command == "init":
@@ -53,6 +59,8 @@ def main():
     elif args.command == "export-dossiers":
         files = export_all_dossiers_markdown(db_path=args.db, output_dir=args.out)
         print(f"Sucesso: {len(files)} dossiers gerados na pasta '{args.out}'.")
+    elif args.command == "report":
+        print("Painel gerado em:", build_report(db_path=args.db, out_path=args.out))
     else:
         parser.print_help()
 
