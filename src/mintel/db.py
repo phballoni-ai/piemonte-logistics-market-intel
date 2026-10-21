@@ -118,8 +118,9 @@ CREATE TABLE IF NOT EXISTS data_quality_flags (
 );
 """
 
-
-def connect(path=DEFAULT_DB):
+def connect(path=None):
+    if path is None:
+        path = DEFAULT_DB
     path = Path(path) if str(path) != ":memory:" else path
     if path != ":memory:":
         Path(path).parent.mkdir(parents=True, exist_ok=True)
@@ -127,13 +128,11 @@ def connect(path=DEFAULT_DB):
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
-
-def init_db(path=DEFAULT_DB):
+def init_db(path=None):
     conn = connect(path)
     conn.executescript(SCHEMA)
     conn.commit()
     return conn
-
 
 if __name__ == "__main__":
     init_db().close()
