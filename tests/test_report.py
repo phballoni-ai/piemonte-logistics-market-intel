@@ -8,10 +8,7 @@ from mintel.report import build_report, collect
 CSV = Path(__file__).resolve().parents[1] / "data" / "sample" / "pilot_synthetic_40.csv"
 
 def _db(tmp_path):
-    db = tmp_path / "t.db"
-    init_db(db).close()
-    ingest_companies_csv(CSV, db_path=db)
-    return db
+    db = tmp_path / "t.db"; init_db(db).close(); ingest_companies_csv(CSV, db_path=db); return db
 
 def test_scores_in_range_and_tiers(tmp_path):
     rows = collect(_db(tmp_path))
